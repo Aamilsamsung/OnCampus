@@ -1,12 +1,11 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {createHash} from 'node:crypto';
-import {adminFromRequest} from '@/lib/admin';
+import {serverDb} from '@/lib/db';
 export async function POST(req:NextRequest){
  try{
-  const db=await adminFromRequest(req);
-  if(!db)return NextResponse.json({error:'Admin authentication required'},{status:401});
+  const db=serverDb();
   const body=await req.json();
-  if(!Array.isArray(body.items)||body.items.length>50)return NextResponse.json({error:'Invalid batch'},{status:400});
+  if(!Array.isArray(body.items)||body.items.length>10)return NextResponse.json({error:'Invalid batch'},{status:400});
   const rows=[];
   for(const item of body.items){
    if(typeof item?.text!=='string'||item.text.length<25||item.text.length>2500||typeof item.chat!=='string'||item.chat.length>200)continue;
@@ -26,5 +25,5 @@ export async function POST(req:NextRequest){
   const {error}=await db.from('events').upsert(rows,{onConflict:'fingerprint',ignoreDuplicates:true});
   if(error)throw error;
   return NextResponse.json({ok:true,received:body.items.length,submitted:rows.length});
- }catch{return NextResponse.json({error:'Unable to accept candidates. Verify database and admin configuration.'},{status:503})}
+ }catch{return NextResponse.json({error:'Unable to accept candidates. Verify database configuration.'},{status:503})}
 }
