@@ -1,8 +1,9 @@
-const DAY=24*60*60*1000;
-async function ensureAlarm(){const alarm=await chrome.alarms.get('daily-check');if(!alarm)await chrome.alarms.create('daily-check',{periodInMinutes:1440});}
-chrome.runtime.onInstalled.addListener(ensureAlarm);
-chrome.runtime.onStartup.addListener(ensureAlarm);
-async function dueCheck(){const {lastDailyCheck}=await chrome.storage.local.get('lastDailyCheck');if(!lastDailyCheck||Date.now()-Date.parse(lastDailyCheck)>DAY){await chrome.storage.local.set({lastDailyCheck:new Date().toISOString(),dailyStatus:'Ready to review approved groups. Open WhatsApp Web and choose Capture in the extension.'});}}
-chrome.alarms.onAlarm.addListener(a=>{if(a.name==='daily-check')dueCheck()});
-chrome.runtime.onStartup.addListener(dueCheck);
-chrome.runtime.onMessage.addListener((msg,sender,respond)=>{if(msg?.type==='status'){chrome.storage.local.get(['approvedGroups','lastDailyCheck','dailyStatus']).then(respond);return true;}});
+const ENDPOINT='https://oncampus-pesu.onrender.com/api/extension/intake';
+const eventRx=/hackathon|workshop|competition|register|registration|seminar|event|deadline|fest|conference|coding contest|quiz|symposium|webinar|bootcamp|meetup|apply now|call for/i;
+async function digest(s){const bytes=new TextEncoder().encode(s.toLowerCase().replace(/\s+/g,' ').trim());return [...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(x=>x.toString(16).padStart(2,'0')).join('')}
+async function enqueue(chat,messages){const data=await chrome.storage.local.get(['approvedGroups','queue','seenHashes','autoSubmit','adminToken','campus']);if(!data.approvedGroups?.[chat])return;const queue=data.queue||[],hashes=data.seenHashes||{};for(const item of messages.slice(0,200)){if(!eventRx.test(item.text))continue;const hash=await digest(item.text);if(hashes[hash])continue;hashes[hash]=Date.now();queue.push({hash,text:item.text,chat,at:new Date().toISOString()})}const recent=Object.entries(hashes).sort((a,b)=>b[1]-a[1]).slice(0,15000);await chrome.storage.local.set({queue:queue.slice(-2000),seenHashes:Object.fromEntries(recent)});if(data.autoSubmit)await submit()}
+async function submit(){const data=await chrome.storage.local.get(['queue','adminToken','campus','autoSubmit']);if(!data.autoSubmit||!data.adminToken||!data.campus)return;const queue=data.queue||[];if(!queue.length)return;const batch=queue.slice(0,50);try{const r=await fetch(ENDPOINT,{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+data.adminToken},body:JSON.stringify({campus:data.campus,items:batch})});if(!r.ok){await chrome.storage.local.set({lastError:'Server rejected submission: HTTP '+r.status});return}const result=await r.json();if(!result.ok)return;const sent=new Set(batch.map(x=>x.hash));const fresh=(await chrome.storage.local.get('queue')).queue||[];await chrome.storage.local.set({queue:fresh.filter(x=>!sent.has(x.hash)),lastSubmit:new Date().toISOString(),lastError:''})}catch(e){await chrome.storage.local.set({lastError:String(e)})}}
+chrome.runtime.onMessage.addListener((m,sender)=>{if(m?.type==='eventCandidates'&&sender.url?.startsWith('https://web.whatsapp.com/'))enqueue(m.chat,m.messages);if(m?.type==='submitNow')submit()});
+chrome.alarms.onAlarm.addListener(a=>{if(a.name==='retry')submit()});
+chrome.runtime.onInstalled.addListener(()=>chrome.alarms.create('retry',{periodInMinutes:60}));
+chrome.runtime.onStartup.addListener(()=>chrome.alarms.create('retry',{periodInMinutes:60}));

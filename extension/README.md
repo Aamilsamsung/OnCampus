@@ -1,7 +1,14 @@
-# OnCampus Chrome extension (v0.2)
-1. Open \`chrome://extensions\`, enable Developer mode, click **Load unpacked**, and select the \`extension\` folder from a local checkout.
-2. Open WhatsApp Web and a group where you have permission to process announcements.
-3. Click **Approve current group**. Group selection currently matches its displayed title, so similarly named groups may collide; do not use it for sensitive chats.
-4. Click **Capture visible event posts**, review each result and select only event announcements you have permission to share.
-5. Export selected posts as a local JSON file. No network upload happens. Import to admin is **not yet implemented**.
-Chrome alarms create a daily reminder/checkpoint, not unattended message scanning. WhatsApp Web UI changes may break extraction. This is an opt-in manual capture MVP, not a background surveillance tool.
+# OnCampus extension v0.3
+Auto-scans only the currently open, explicitly approved WhatsApp Web chat. It does NOT automatically open 100 chats or scan hidden message history. New messages matching event keywords are queued locally, deduplicated by normalized SHA-256 message text, and can be submitted to the website's private admin queue.
+
+## Setup
+1. Load unpacked \`extension\` at chrome://extensions.
+2. Open WhatsApp Web and approve the current group in the extension popup.
+3. Enable automatic scanning.
+4. Configure Supabase and run supabase/schema.sql. Create your Supabase Auth admin user and add their user ID to public.admins.
+5. Add each approved group label to public.approved_groups (group_ref and label both matching displayed WhatsApp chat name).
+6. Enter your **short-lived Supabase admin access token** and select campus in the popup; enable auto submit. Do not use a service-role key or collector secret in the extension. This MVP stores the token in Chrome local extension storage; it is not recommended for shared computers or long-term use. Tokens expire and require renewal.
+7. New event candidates are submitted to /api/extension/intake and stored as pending. Review and publish in the admin page.
+
+## Limits
+Chrome and WhatsApp Web must be open; only the active approved group is observed. Exact normalized-message duplicates are skipped locally and in the database; paraphrased announcements may still duplicate. Event title and category extraction are heuristic, not Gemini. Auto-submit requires live Supabase and valid admin auth. Avoid processing chats without appropriate consent.

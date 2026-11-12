@@ -1,16 +1,27 @@
 {
   "manifest_version": 3,
-  "name": "OnCampus — Event Collector",
-  "version": "0.2.0",
-  "description": "Opt-in event capture from individually approved WhatsApp Web groups. No automatic chat uploads.",
+  "name": "OnCampus Event Collector",
+  "version": "0.3.0",
+  "description": "Opt-in automatic event candidate capture from approved WhatsApp Web chats",
   "permissions": [
     "storage",
     "alarms",
-    "activeTab",
-    "scripting"
+    "tabs"
   ],
   "host_permissions": [
-    "https://web.whatsapp.com/*"
+    "https://web.whatsapp.com/*",
+    "https://oncampus-pesu.onrender.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://web.whatsapp.com/*"
+      ],
+      "js": [
+        "watch.js"
+      ],
+      "run_at": "document_idle"
+    }
   ],
   "action": {
     "default_popup": "popup.html"
