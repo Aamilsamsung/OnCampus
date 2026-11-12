@@ -13,3 +13,5 @@ revoke all on public.admins,public.approved_groups,public.approved_sources from 
 grant select on public.events to anon,authenticated;
 create policy "Published event reading" on public.events for select to anon,authenticated using(status='published');
 -- All privileged operations use the server-side service role after admin verification.
+
+alter table public.events add column if not exists ends_at timestamptz;
