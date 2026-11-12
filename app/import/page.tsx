@@ -1,0 +1,20 @@
+'use client';
+import {useEffect,useState} from 'react';
+import {createClient, type SupabaseClient} from '@supabase/supabase-js';
+type Candidate={hash:string;text:string;chat:string;type?:string};
+const url=process.env.NEXT_PUBLIC_SUPABASE_URL||'';
+const key=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY||'';
+export default function ImportPage(){
+ const [db]=useState<SupabaseClient|null>(()=>url&&key?createClient(url,key):null);
+ const [items,setItems]=useState<Candidate[]>([]);
+ const [email,setEmail]=useState('');
+ const [token,setToken]=useState('');
+ const [campus,setCampus]=useState('Electronic City');
+ const [status,setStatus]=useState('Loading candidates…');
+ const [busy,setBusy]=useState(false);
+ useEffect(()=>{try{const raw=sessionStorage.getItem('oncampus-import-pending');const list=raw?JSON.parse(raw):[];setItems(Array.isArray(list)?list:[]);setStatus(list.length?'Review the events below, then sign in to submit.':'No events received. Click Upload in the extension first.')}catch{setStatus('Could not read event candidates.')}},[]);
+ useEffect(()=>{if(!db)return;db.auth.getSession().then(({data})=>setToken(data.session?.access_token||''));const {data:{subscription}}=db.auth.onAuthStateChange((_event,session)=>setToken(session?.access_token||''));return()=>subscription.unsubscribe()},[db]);
+ async function signIn(){if(!db||!email.includes('@')){setStatus('Enter a valid email address.');return}setBusy(true);try{const {error}=await db.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+'/import'}});setStatus(error?error.message:'Check your email for a secure sign-in link.')}finally{setBusy(false)}}
+ async function upload(){if(!token){setStatus('Sign in first. Only an authorized OnCampus owner can upload.');return}if(!items.length)return;setBusy(true);try{let submitted=0;for(let i=0;i<items.length;i+=50){const batch=items.slice(i,i+50);const response=await fetch('/api/extension/intake',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+token},body:JSON.stringify({campus,items:batch})});const result=await response.json();if(!response.ok||!result.ok)throw Error(result.error||'Upload failed');submitted+=result.submitted||0}sessionStorage.removeItem('oncampus-import-pending');setItems([]);setStatus('Submitted '+submitted+' candidates for review. They are not publicly published.')}catch(e){setStatus(e instanceof Error?e.message:'Upload failed')}finally{setBusy(false)}}
+ return <main style={{maxWidth:820,margin:'48px auto',padding:24,fontFamily:'system-ui'}}><h1>Review WhatsApp events</h1><p>Events stay private and pending until reviewed. No extension pairing code is needed.</p><p role="status">{status}</p><label>Campus <select value={campus} onChange={e=>setCampus(e.target.value)}><option>Electronic City</option><option>Ring Road</option><option>Hanumanth Nagar</option></select></label><h2>{items.length} candidates</h2><div style={{maxHeight:360,overflow:'auto'}}>{items.map((x,i)=><article key={x.hash||i} style={{borderBottom:'1px solid #aaa',padding:'12px 0'}}><strong>{x.chat}</strong><p style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{x.text}</p><button onClick={()=>setItems(v=>v.filter((_,j)=>j!==i))}>Remove</button></article>)}</div>{!token?<div style={{marginTop:24}}><h2>Owner sign-in</h2><input aria-label="Email address" type="email" placeholder="Your owner email" value={email} onChange={e=>setEmail(e.target.value)}/><button disabled={busy||!db} onClick={signIn}>Email me a sign-in link</button></div>:<p>Signed in securely.</p>}<p><button disabled={busy||!token||!items.length} onClick={upload}>Confirm upload ({items.length})</button></p><small>Only accounts listed in the OnCampus admins table can submit events.</small></main>
+}
