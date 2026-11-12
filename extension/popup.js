@@ -1,0 +1,1 @@
+document.getElementById('capture').onclick=async()=>{document.getElementById('result').textContent='No WhatsApp messages are accessed in this version.'};

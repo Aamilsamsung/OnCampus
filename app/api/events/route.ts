@@ -1,0 +1,3 @@
+import {NextResponse} from 'next/server';import {publicDb} from '@/lib/db';
+export const dynamic='force-dynamic';
+export async function GET(){try{const db=publicDb();if(!db)return NextResponse.json({events:[],setupRequired:true});const {data,error}=await db.from('events').select('id,title,description,campus,category,starts_at,registration_deadline,venue,registration_url,source_type,source_url,created_at').eq('status','published').or('starts_at.is.null,starts_at.gte.'+new Date().toISOString()).order('starts_at',{ascending:true,nullsFirst:false}).limit(150);if(error)throw error;return NextResponse.json({events:data||[]})}catch{return NextResponse.json({error:'Event feed unavailable'},{status:503})}}

@@ -1,0 +1,1 @@
+chrome.runtime.onInstalled.addListener(()=>chrome.alarms.create('daily-check',{periodInMinutes:1440}));chrome.alarms.onAlarm.addListener(async alarm=>{if(alarm.name==='daily-check')await chrome.storage.local.set({lastScheduledCheck:new Date().toISOString(),status:'No WhatsApp content read. Manual import needed.'})});
