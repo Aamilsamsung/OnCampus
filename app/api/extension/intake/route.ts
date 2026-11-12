@@ -6,7 +6,7 @@ export async function POST(req:NextRequest){
   const db=await adminFromRequest(req);
   if(!db)return NextResponse.json({error:'Admin authentication required'},{status:401});
   const body=await req.json();
-  if(!['Electronic City','Ring Road','Hanumanth Nagar'].includes(body.campus)||!Array.isArray(body.items)||body.items.length>50)return NextResponse.json({error:'Invalid batch'},{status:400});
+  if(!Array.isArray(body.items)||body.items.length>50)return NextResponse.json({error:'Invalid batch'},{status:400});
   const rows=[];
   for(const item of body.items){
    if(typeof item?.text!=='string'||item.text.length<25||item.text.length>2500||typeof item.chat!=='string'||item.chat.length>200)continue;
@@ -16,7 +16,11 @@ export async function POST(req:NextRequest){
    if(title.length<5)continue;
    const category=/hackathon/i.test(clean)?'Hackathon':/workshop|bootcamp|webinar/i.test(clean)?'Workshop':/competition|contest|quiz/i.test(clean)?'Competition':/fest|cultural/i.test(clean)?'Cultural':'Other';
    const fingerprint=createHash('sha256').update(clean.toLowerCase().replace(/\s+/g,' ')).digest('hex');
-   rows.push({title,description:clean,campus:body.campus,category,source_type:'whatsapp_group',source_ref:item.chat,fingerprint,status:'pending'});
+   const context=(clean+'\\n'+item.chat);
+   const campus=/\\b(?:electronic city|ec campus|pesu?\\s*ec|pesit\\s*south)\\b/i.test(context)?'Electronic City':/\\b(?:ring road|rr campus|pesu?\\s*rr|banashankari)\\b/i.test(context)?'Ring Road':/\\b(?:hanumanth nagar|hn campus)\\b/i.test(context)?'Hanumanth Nagar':null;
+   const venueLine=lines.find((x:string)=>/^(?:venue|location|place|where)\\s*[:\\-]/i.test(x));
+   const venue=venueLine?.replace(/^(?:venue|location|place|where)\\s*[:\\-]\\s*/i,'').slice(0,250)||null;
+   rows.push({title,description:clean,campus:campus||'To be confirmed',venue,category,source_type:'whatsapp_group',source_ref:item.chat,fingerprint,status:'pending'});
   }
   if(!rows.length)return NextResponse.json({ok:true,received:0,submitted:0});
   const {error}=await db.from('events').upsert(rows,{onConflict:'fingerprint',ignoreDuplicates:true});
