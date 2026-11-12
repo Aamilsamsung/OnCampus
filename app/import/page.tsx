@@ -7,7 +7,7 @@ const key=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY||'';
 export default function ImportPage(){
  const [db]=useState<SupabaseClient|null>(()=>url&&key?createClient(url,key):null);
  const [items,setItems]=useState<Candidate[]>([]);
- const [email,setEmail]=useState('');
+ const [email,setEmail]=useState('backbencher.pesu@gmail.com');
  const [token,setToken]=useState('');
  const [status,setStatus]=useState('Loading candidates…');
  const [busy,setBusy]=useState(false);
