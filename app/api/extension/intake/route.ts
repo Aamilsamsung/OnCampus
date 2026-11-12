@@ -15,11 +15,15 @@ export async function POST(req:NextRequest){
    if(title.length<5)continue;
    const category=/hackathon/i.test(clean)?'Hackathon':/workshop|bootcamp|webinar/i.test(clean)?'Workshop':/competition|contest|quiz/i.test(clean)?'Competition':/fest|cultural/i.test(clean)?'Cultural':'Other';
    const fingerprint=createHash('sha256').update(clean.toLowerCase().replace(/\s+/g,' ')).digest('hex');
-   const context=(clean+'\\n'+item.chat);
-   const campus=/\\b(?:electronic city|ec campus|pesu?\\s*ec|pesit\\s*south)\\b/i.test(context)?'Electronic City':/\\b(?:ring road|rr campus|pesu?\\s*rr|banashankari)\\b/i.test(context)?'Ring Road':/\\b(?:hanumanth nagar|hn campus)\\b/i.test(context)?'Hanumanth Nagar':null;
-   const venueLine=lines.find((x:string)=>/^(?:venue|location|place|where)\\s*[:\\-]/i.test(x));
-   const venue=venueLine?.replace(/^(?:venue|location|place|where)\\s*[:\\-]\\s*/i,'').slice(0,250)||null;
-   rows.push({title,description:clean,campus:campus||'To be confirmed',venue,category,source_type:'whatsapp_group',source_ref:item.chat,fingerprint,status:'pending'});
+   const context=clean+'\n'+item.chat;
+   const campus=/\b(?:electronic city|ec campus|pesu?\s*ec|pesit\s*south)\b/i.test(context)?'Electronic City':/\b(?:ring road|rr campus|pesu?\s*rr|banashankari)\b/i.test(context)?'Ring Road':/\b(?:hanumanth nagar|hn campus)\b/i.test(context)?'Hanumanth Nagar':null;
+   const venueLine=lines.find((x:string)=>/^\s*(?:venue|location|place|where)\s*[:\-]/i.test(x));
+   const venue=venueLine?.replace(/^\s*(?:venue|location|place|where)\s*[:\-]\s*/i,'').slice(0,250)||null;
+   const urls=[...clean.matchAll(/https?:\/\/[^\s<>"']+/gi)].map(m=>m[0].replace(/[),.;!?]+$/,''));
+   const registrationUrl=urls.find(u=>/forms\.gle|docs\.google\.com\/forms|register|registration|unstop|devfolio|lu\.ma|eventbrite|eclub-web/i.test(u))||urls.find(u=>!/chat\.whatsapp\.com|instagram\.com|wa\.me/i.test(u))||null;
+   const sourceUrl=urls.find(u=>/instagram\.com|linkedin\.com|facebook\.com/i.test(u))||null;
+   const eventCategory=/recruitment|join (?:our |the )?club|club applications|club inductions/i.test(clean)?'Club Recruitment':category;
+   rows.push({title,description:clean,campus:campus||'To be confirmed',venue,registration_url:registrationUrl,source_url:sourceUrl,category:eventCategory,source_type:'whatsapp_group',source_ref:item.chat,fingerprint,status:'pending'});
   }
   if(!rows.length)return NextResponse.json({ok:true,received:0,submitted:0});
   const {error}=await db.from('events').upsert(rows,{onConflict:'fingerprint',ignoreDuplicates:true});
