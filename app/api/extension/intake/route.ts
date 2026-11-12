@@ -7,11 +7,9 @@ export async function POST(req:NextRequest){
   if(!db)return NextResponse.json({error:'Admin authentication required'},{status:401});
   const body=await req.json();
   if(!['Electronic City','Ring Road','Hanumanth Nagar'].includes(body.campus)||!Array.isArray(body.items)||body.items.length>50)return NextResponse.json({error:'Invalid batch'},{status:400});
-  const {data:approved}=await db.from('approved_groups').select('group_ref,label').eq('enabled',true);
-  const allowed=new Set((approved||[]).flatMap(g=>[g.group_ref,g.label]));
   const rows=[];
   for(const item of body.items){
-   if(typeof item?.text!=='string'||item.text.length<25||item.text.length>2500||typeof item.chat!=='string'||!allowed.has(item.chat))continue;
+   if(typeof item?.text!=='string'||item.text.length<25||item.text.length>2500||typeof item.chat!=='string'||item.chat.length>200)continue;
    const clean=item.text.trim();
    const lines=clean.split(/\n/).map((x:string)=>x.trim()).filter(Boolean);
    const title=(lines.find((x:string)=>/hackathon|workshop|competition|seminar|fest|event|conference|webinar|bootcamp|symposium|meetup/i.test(x))||lines[0]||'').slice(0,250);
