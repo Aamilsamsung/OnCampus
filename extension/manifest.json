@@ -1,11 +1,10 @@
 {
   "manifest_version": 3,
   "name": "OnCampus Event Collector",
-  "version": "0.4.0",
-  "description": "Scan the open approved WhatsApp chat and upload event candidates to OnCampus review",
+  "version": "0.8.0",
+  "description": "Continuous WhatsApp event scanning",
   "permissions": [
     "storage",
-    "alarms",
     "tabs",
     "scripting"
   ],
