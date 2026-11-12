@@ -1,0 +1,1 @@
+import type {ReactNode} from 'react';import './globals.css';export const metadata={title:'OnCampus | PES University Events',description:'Discover verified PES University events'};export default function Layout({children}:{children:ReactNode}){return <html lang="en"><body>{children}</body></html>}
