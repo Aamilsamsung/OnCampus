@@ -1,12 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "OnCampus Collector",
-  "version": "0.1.0",
-  "description": "Opt-in event collection from selected approved college groups (scaffold).",
+  "name": "OnCampus — Event Collector",
+  "version": "0.2.0",
+  "description": "Opt-in event capture from individually approved WhatsApp Web groups. No automatic chat uploads.",
   "permissions": [
     "storage",
     "alarms",
-    "activeTab"
+    "activeTab",
+    "scripting"
   ],
   "host_permissions": [
     "https://web.whatsapp.com/*"

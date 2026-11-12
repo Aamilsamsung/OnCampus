@@ -1,0 +1,2 @@
+# Official PES collector
+Run \`pip install -r collector/requirements.txt && python collector/pes_collector.py\`. Reads only allowlisted official PES pages. Outputs candidate links as JSON to review; **does not invent dates or automatically publish**. Use PES_SOURCE_URLS to specify a comma-separated list of official source URLs. No Google Search. Do not scrape pages disallowed by robots.txt or site terms. The server-side daily scheduler and database import are not yet configured.
