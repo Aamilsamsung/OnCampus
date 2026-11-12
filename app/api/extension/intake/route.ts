@@ -10,8 +10,8 @@ export async function POST(req:NextRequest){
   for(const item of body.items){
    if(typeof item?.text!=='string'||item.text.length<25||item.text.length>2500||typeof item.chat!=='string'||item.chat.length>200)continue;
    const clean=item.text.trim();
-   const lines=clean.split(/\n/).map((x:string)=>x.trim()).filter(Boolean);
-   const title=(lines.find((x:string)=>/hackathon|workshop|competition|seminar|fest|event|conference|webinar|bootcamp|symposium|meetup/i.test(x))||lines[0]||'').slice(0,250);
+   const lines=clean.replace(/\\n/g,'\n').split(/\n/).map((x:string)=>x.trim()).filter(Boolean);
+   const title=(lines.find((x:string)=>/praxis\s*2|zerohour|club recruitment|recruitment|hackathon|workshop|competition|seminar|fest|conference|webinar|bootcamp|symposium|meetup/i.test(x)&&x.length<135)||lines.find((x:string)=>x.length>8&&!/^(?:https?:|\d{1,2}:\d{2}$)/i.test(x))||'').replace(/^#+\s*/,'').slice(0,180);
    if(title.length<5)continue;
    const category=/hackathon/i.test(clean)?'Hackathon':/workshop|bootcamp|webinar/i.test(clean)?'Workshop':/competition|contest|quiz/i.test(clean)?'Competition':/fest|cultural/i.test(clean)?'Cultural':'Other';
    const fingerprint=createHash('sha256').update(clean.toLowerCase().replace(/\s+/g,' ')).digest('hex');
