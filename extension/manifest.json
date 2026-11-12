@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "OnCampus Event Collector",
-  "version": "0.3.0",
-  "description": "Opt-in automatic event candidate capture from approved WhatsApp Web chats",
+  "version": "0.4.0",
+  "description": "Scan the open approved WhatsApp chat and upload event candidates to OnCampus review",
   "permissions": [
     "storage",
     "alarms",
@@ -12,17 +12,6 @@
   "host_permissions": [
     "https://web.whatsapp.com/*",
     "https://oncampus-pesu.onrender.com/*"
-  ],
-  "content_scripts": [
-    {
-      "matches": [
-        "https://web.whatsapp.com/*"
-      ],
-      "js": [
-        "watch.js"
-      ],
-      "run_at": "document_idle"
-    }
   ],
   "action": {
     "default_popup": "popup.html"
